@@ -1,0 +1,2128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Verification System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Base styles for the body and container */
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for better content flow */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box; /* Ensure padding is included in total width/height */
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column; /* Default to column for mobile */
+            overflow: hidden;
+        }
+        /* Sidebar styles (desktop/tablet) */
+        .sidebar {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            /* Hidden by default on mobile, shown on larger screens */
+            display: none;
+        }
+        .sidebar-item {
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-item:hover {
+            background-color: #34495e;
+            transform: translateX(5px);
+        }
+        .sidebar-item.active {
+            background-color: #1abc9c;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+            /* Add padding bottom for mobile nav bar */
+            padding-bottom: 80px; /* Adjust based on mobile nav height */
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="date"],
+        .form-group input[type="file"],
+        .form-group select,
+        .form-group textarea { /* Added textarea for custom message */
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
+        .form-group input[type="date"]:focus,
+        .form-group input[type="file"]:focus,
+        .form-group select:focus,
+        .form-group textarea:focus { /* Added textarea focus */
+            border-color: #1abc9c;
+            box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.2);
+            outline: none;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .btn-primary {
+            background-color: #1abc9c;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #16a085;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn-secondary {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn-info {
+            background-color: #f39c12;
+            color: white;
+        }
+        .btn-info:hover {
+            background-color: #e67e22;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+            z-index: 1000;
+            min-width: 300px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .message-box h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            color: #333;
+        }
+        .message-box p {
+            margin-bottom: 25px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .message-box button {
+            padding: 10px 25px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            background-color: #1abc9c;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .message-box button:hover {
+            background-color: #16a085;
+        }
+        .message-box .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .message-box .button-group .btn-cancel {
+            background-color: #95a5a6;
+        }
+        .message-box .button-group .btn-cancel:hover {
+            background-color: #7f8c8d;
+        }
+
+        /* Table styling */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden; /* Ensures rounded corners apply to table */
+        }
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .data-table th {
+            background-color: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .data-table tbody tr:hover {
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+        .data-table td {
+            color: #555;
+        }
+
+        /* Mobile Bottom Navigation Bar */
+        .mobile-nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 900; /* Below message box, above content */
+        }
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 0.8em;
+            text-align: center;
+            flex: 1; /* Distribute space evenly */
+        }
+        .mobile-nav-item svg {
+            margin-bottom: 3px;
+        }
+        .mobile-nav-item:hover {
+            background-color: #34495e;
+        }
+        .mobile-nav-item.active {
+            background-color: #1abc9c;
+            color: #ffffff;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 20px; /* Reset padding for desktop */
+            }
+            .container {
+                flex-direction: row;
+            }
+            .sidebar {
+                min-width: 220px;
+                border-bottom-left-radius: 12px;
+                border-top-right-radius: 0;
+                display: flex; /* Show sidebar on desktop/tablet */
+            }
+            .main-content {
+                border-top-right-radius: 12px;
+                border-bottom-right-radius: 12px;
+                padding-bottom: 30px; /* Reset padding for desktop */
+            }
+            .mobile-nav-bar {
+                display: none; /* Hide mobile nav on desktop/tablet */
+            }
+        }
+        @media (max-width: 767px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                display: none; /* Hide sidebar on mobile */
+            }
+            .main-content {
+                padding: 20px;
+                padding-bottom: 80px; /* Ensure space for fixed mobile nav */
+            }
+            .mobile-nav-bar {
+                display: flex; /* Show mobile nav on mobile */
+            }
+        }
+
+        /* Print-specific styles */
+        @media print {
+            body > *:not(.container) {
+                display: none; /* Hide everything except the main container */
+            }
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+                width: 100%;
+                max-width: none;
+                display: block; /* Ensure it takes full width for printing */
+            }
+            .sidebar, .form-group, .btn, .message-box-overlay, .message-box, .whatsapp-prompt, .mobile-nav-bar {
+                display: none !important; /* Hide UI elements not needed for print */
+            }
+            .main-content {
+                padding: 0; /* Remove padding for print layout */
+                overflow: visible; /* Allow content to flow */
+            }
+            /* Hide all page sections by default in print mode */
+            .page-section { display: none !important; }
+
+            /* Show only the targeted section */
+            body.print-mode-reports-section #reports-section {
+                display: block !important;
+                width: 100%;
+                margin: 0;
+            }
+            body.print-mode-csv-report-section #csv-report-section {
+                display: block !important;
+                width: 100%;
+                margin: 0;
+            }
+            .data-table {
+                box-shadow: none;
+                border-radius: 0;
+                margin-top: 0;
+            }
+            .data-table th, .data-table td {
+                border: 1px solid #ccc; /* Add borders for print clarity */
+            }
+            h2, h3 {
+                color: #000 !important; /* Ensure black text for print */
+            }
+            .bg-blue-50, .bg-green-50, .bg-yellow-50, .bg-red-50 {
+                background-color: #fff !important; /* White background for print */
+                box-shadow: none !important;
+                border: 1px solid #eee;
+            }
+        }
+
+        /* WhatsApp Prompt Specific Styles */
+        .whatsapp-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+            z-index: 1001;
+            min-width: 400px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .whatsapp-prompt select {
+            margin-bottom: 15px;
+        }
+        .whatsapp-prompt ul {
+            list-style: none;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .whatsapp-prompt ul li {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .whatsapp-prompt ul li:last-child {
+            border-bottom: none;
+        }
+        .whatsapp-prompt ul li.selected {
+            background-color: #e0f2f1;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation (Desktop/Tablet) -->
+        <div class="sidebar">
+            <h2 class="text-2xl font-bold mb-5 text-center">PVS App</h2>
+            <div class="sidebar-item active" id="nav-dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg>
+                Dashboard
+            </div>
+            <div class="sidebar-item" id="nav-bill-entry">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-list"><rect width="8" height="4" x="8" y="2"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 15h4"></path><path d="M8 11h.01"></path><path d="M8 15h.01"></path></svg>
+                Bill Entry
+            </div>
+            <div class="sidebar-item" id="nav-recheck-entry">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+                Received Entry
+            </div>
+            <div class="sidebar-item" id="nav-reconcile">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-git-compare"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><path d="M11 18H8a2 2 0 0 1-2-2V9"></path></svg>
+                Reconcile Payments
+            </div>
+            <div class="sidebar-item" id="nav-import-data">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-input"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M12 18v-6"></path><path d="m9 15 3-3 3 3"></path></svg>
+                Import Data (CSV)
+            </div>
+            <div class="sidebar-item" id="nav-csv-report">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L15 2Z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="10" x2="14" y1="12" y2="12"></line><line x1="10" x2="16" y1="16" y2="16"></line><line x1="10" x2="12" y1="20" y2="20"></line></svg>
+                CSV Report
+            </div>
+            <div class="sidebar-item" id="nav-reports">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                Reports
+            </div>
+            <div class="sidebar-item" id="nav-whatsapp-report">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V3a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                WhatsApp Report
+            </div>
+            <div class="sidebar-item mt-auto" id="nav-reset-all-data">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.76 2.75L3 12Z"></path><path d="M2.91 7.29V2.75H8.35"></path></svg>
+                Reset All Data
+            </div>
+            <div class="sidebar-item" id="nav-exit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="17 16 22 12 17 8"></polyline><line x1="22" x2="10" y1="12" y2="12"></line></svg>
+                Exit
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="page-section">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Dashboard</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-blue-50 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold text-blue-800 mb-3">Total Bill Entries</h3>
+                        <p id="totalBillEntries" class="text-3xl font-bold text-blue-600">0</p>
+                    </div>
+                    <div class="bg-green-50 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold text-green-800 mb-3">Total Received Entries</h3>
+                        <p id="totalReceivedEntries" class="text-3xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="bg-yellow-50 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold text-yellow-800 mb-3">Total Pending Payments</h3>
+                        <p id="totalPendingPayments" class="text-3xl font-bold text-yellow-600">0</p>
+                    </div>
+                    <div class="bg-red-50 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold text-red-800 mb-3">Total Unmatched Entries</h3>
+                        <p id="totalUnmatchedEntries" class="text-3xl font-bold text-red-600">0</p>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-semibold text-gray-800 mb-4">Quick Actions</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button class="btn btn-primary" onclick="showPage('bill-entry')">Add New Bill</button>
+                    <button class="btn btn-secondary" onclick="showPage('reconcile')">Run Reconciliation</button>
+                </div>
+            </div>
+
+            <!-- Bill Entry Section -->
+            <div id="bill-entry-section" class="page-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Bill Entry</h2>
+
+                <div class="form-group">
+                    <label for="entryDateBill">Entry Date:</label>
+                    <input type="date" id="entryDateBill" class="rounded-lg">
+                </div>
+
+                <div class="p-6 bg-gray-50 rounded-lg shadow-inner mb-6">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Add New Bill</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group">
+                            <label for="billNoInput">Bill Number:</label>
+                            <input type="text" id="billNoInput" placeholder="Enter Bill Number" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="billAmountInput">Bill Amount:</label>
+                            <input type="number" id="billAmountInput" placeholder="Enter Bill Amount" class="rounded-lg">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary mt-4" id="addBillToTempListBtn">Add to List</button>
+                </div>
+
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Bills to Save</h3>
+                <div class="overflow-x-auto rounded-lg mb-6">
+                    <table class="data-table w-full" id="tempBillEntriesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bill No.</th>
+                                <th>Bill Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Temporary bill entries will be rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex flex-wrap gap-4 mt-6">
+                    <button class="btn btn-primary" id="saveAllBillsBtn">Save All Bills</button>
+                    <button class="btn btn-danger" id="clearTempBillsBtn">Clear List</button>
+                </div>
+
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg shadow-inner">
+                    <h3 class="text-xl font-semibold mb-3 text-gray-700">Manage Existing Bill Entries</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group">
+                            <label for="billNoSearchInput">Bill Number (for Search/Update/Delete):</label>
+                            <input type="text" id="billNoSearchInput" placeholder="Enter Bill Number" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="billAmountUpdateInput">New Bill Amount (for Update):</label>
+                            <input type="number" id="billAmountUpdateInput" placeholder="Enter new amount" class="rounded-lg">
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mt-4">
+                        <button class="btn btn-secondary" id="searchBillBtn">Search Bill</button>
+                        <button class="btn btn-info" id="updateBillBtn">Update Bill Amount</button>
+                        <button class="btn btn-danger" id="deleteBillBtn">Delete Bill Entry</button>
+                    </div>
+                    <div class="mt-4">
+                        <p id="billEntryDisplay" class="text-gray-600">No bill selected.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recheck Entry Section -->
+            <div id="recheck-entry-section" class="page-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Received Entry</h2>
+                
+                <div class="form-group">
+                    <label for="entryDateReceived">Entry Date:</label>
+                    <input type="date" id="entryDateReceived" class="rounded-lg">
+                </div>
+
+                <div class="p-6 bg-gray-50 rounded-lg shadow-inner mb-6">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Add New Received Entry</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group">
+                            <label for="receivedAmountInput">Received Amount:</label>
+                            <input type="number" id="receivedAmountInput" placeholder="Enter Received Amount" class="rounded-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="receivedSourceInput">Source:</label>
+                            <select id="receivedSourceInput" class="rounded-lg">
+                                <option value="Paytm" selected>Paytm</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Wallet">Wallet</option>
+                                <option value="PhonePe">PhonePe</option>
+                                <option value="Manual Entry">Manual Entry</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary mt-4" id="addReceivedToTempListBtn">Add to List</button>
+                </div>
+
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Received Entries to Save</h3>
+                <div class="overflow-x-auto rounded-lg mb-6">
+                    <table class="data-table w-full" id="tempReceivedEntriesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Received Amount</th>
+                                <th>Source</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Temporary received entries will be rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex flex-wrap gap-4 mt-6">
+                    <button class="btn btn-primary" id="saveAllReceivedBtn">Save All Received Entries</button>
+                    <button class="btn btn-danger" id="clearTempReceivedBtn">Clear List</button>
+                </div>
+            </div>
+
+            <!-- Reconcile Payments Section -->
+            <div id="reconcile-section" class="page-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Reconcile Payments</h2>
+                <p class="text-gray-700 mb-6">Click the button below to run the reconciliation process. This will match bill and received amounts and update their statuses.</p>
+                <button class="btn btn-primary" id="runPVSBtn">Run Reconciliation (PVS)</button>
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg shadow-inner">
+                    <h3 class="text-xl font-semibold mb-3 text-gray-700">Reconciliation Status</h3>
+                    <p id="reconciliationStatus" class="text-gray-600">No reconciliation run yet.</p>
+                </div>
+            </div>
+
+            <!-- Import Data Section -->
+            <div id="import-data-section" class="page-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Import Data from CSV</h2>
+                <p class="text-gray-700 mb-4">Select a CSV file to import. The application will read the headers, and then you can select the 'Amount' column to import its data into Received entries.</p>
+                <div class="form-group">
+                    <label for="csvFileInput">Choose CSV File:</label>
+                    <input type="file" id="csvFileInput" accept=".csv" class="rounded-lg">
+                </div>
+                <div class="form-group mt-4">
+                    <label for="csvHeadersSelect">Select Column to Import (should only be 'Amount'):</label>
+                    <select id="csvHeadersSelect" class="rounded-lg">
+                        <option value="">-- Select a Header --</option>
+                    </select>
+                </div>
+                <div class="flex flex-wrap gap-4 mt-6">
+                    <button class="btn btn-secondary" id="loadCsvBtn">Load CSV Headers</button>
+                    <button class="btn btn-primary" id="importAmountColumnBtn">Import Selected Column</button>
+                </div>
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg shadow-inner">
+                    <h3 class="text-xl font-semibold mb-3 text-gray-700">Import Status</h3>
+                    <p id="importStatus" class="text-gray-600">No file loaded.</p>
+                </div>
+            </div>
+
+            <!-- CSV Import Report Section -->
+            <div id="csv-report-section" class="page-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">CSV Import Report</h2>
+                <div class="form-group mb-6">
+                    <label for="csvReportFilter">Search in CSV Data:</label>
+                    <input type="text" id="csvReportFilter" placeholder="Search in CSV data..." class="rounded-lg">
+                </div>
+                <button class="btn btn-info mb-6" id="printCsvReportBtn">Print CSV Report</button>
+                <div class="overflow-x-auto rounded-lg">
+                    <table class="data-table w-full" id="csvDataTable">
+                        <thead>
+                            <!-- Headers will be dynamic based on imported CSV -->
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="reports-section" class="page-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Reports</h2>
+
+                <div class="form-group mb-6">
+                    <label for="reportFilterDate">Filter by Date:</label>
+                    <input type="date" id="reportFilterDate" class="rounded-lg">
+                </div>
+                <div class="form-group mb-6">
+                    <label for="reportFilterAmount">Filter Report by Amount:</label>
+                    <input type="number" id="reportFilterAmount" placeholder="Enter amount to filter" class="rounded-lg">
+                </div>
+
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <button class="btn btn-info" id="printAllReportsBtn">Print All Reports</button>
+                    <button class="btn btn-info" id="printMatchedReportsBtn">Print Matched Reports</button>
+                    <button class="btn btn-info" id="printUnmatchedReportsBtn">Print Unmatched Reports</button>
+                </div>
+
+                <h3 class="text-2xl font-semibold text-gray-800 mb-4">Matched Entries</h3>
+                <div class="overflow-x-auto rounded-lg">
+                    <table class="data-table w-full" id="matchedDataTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bill Amount</th>
+                                <th>Received Amount</th>
+                                <th>Status</th>
+                                <th>Bill Number</th>
+                                <th>Received Source</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="text-2xl font-semibold text-gray-800 mt-10 mb-4">Unmatched Entries</h3>
+                <div class="overflow-x-auto rounded-lg">
+                    <table class="data-table w-full" id="unmatchedDataTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bill Amount (Unmatched)</th>
+                                <th>Received Amount (Unmatched)</th>
+                                <th>Status</th>
+                                <th>Bill Number</th>
+                                <th>Received Source</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- New Master Report for Received Amounts by Source -->
+                <h3 class="text-2xl font-semibold text-gray-800 mt-10 mb-4">Received Payment Summary by Source</h3>
+                <div class="overflow-x-auto rounded-lg">
+                    <table class="data-table w-full" id="receivedSourceMasterTable">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Total Received Amount</th>
+                                <th>Number of Entries</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- WhatsApp Report Section -->
+            <div id="whatsapp-report-section" class="page-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Send WhatsApp Report</h2>
+                <p class="text-gray-700 mb-4">Select a report type and enter a WhatsApp number to send the report.</p>
+                <div class="form-group">
+                    <label for="reportTypeSelect">Select Report Type:</label>
+                    <select id="reportTypeSelect" class="rounded-lg">
+                        <option value="unmatched">Unmatched Entries</option>
+                        <option value="matched">Matched Entries</option>
+                        <option value="receivedSourceSummary">Received Source Summary</option>
+                        <option value="csv">CSV Import Report</option>
+                        <option value="allReports">All Reports (Master)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="whatsappReportNumberInput">WhatsApp Number (with country code):</label>
+                    <input type="text" id="whatsappReportNumberInput" placeholder="Enter WhatsApp Number" class="rounded-lg">
+                </div>
+                <button class="btn btn-primary" id="sendReportWhatsappBtn">Send Report via WhatsApp</button>
+                <p class="text-sm text-gray-500 mt-4">Note: This will open WhatsApp Web/App. You will need to manually confirm sending the message.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <div id="mobile-nav" class="mobile-nav-bar">
+        <div class="mobile-nav-item active" id="mobile-nav-dashboard">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg>
+            <span>Dashboard</span>
+        </div>
+        <div class="mobile-nav-item" id="mobile-nav-bill-entry">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-list"><rect width="8" height="4" x="8" y="2"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 15h4"></path><path d="M8 11h.01"></path><path d="M8 15h.01"></path></svg>
+            <span>Bill Entry</span>
+        </div>
+        <div class="mobile-nav-item" id="mobile-nav-recheck-entry">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+            <span>Received</span>
+        </div>
+        <div class="mobile-nav-item" id="mobile-nav-reports">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+            <span>Reports</span>
+        </div>
+        <div class="mobile-nav-item" id="mobile-nav-whatsapp-report">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V3a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <span>WhatsApp</span>
+        </div>
+    </div>
+
+    <!-- Custom Message Box -->
+    <div id="messageBoxOverlay" class="message-box-overlay hidden"></div>
+    <div id="messageBox" class="message-box hidden">
+        <h3 id="messageBoxTitle"></h3>
+        <p id="messageBoxContent"></p>
+        <div class="button-group" id="messageBoxButtons">
+            <button id="messageBoxOkBtn" class="btn btn-primary">OK</button>
+            <button id="messageBoxCancelBtn" class="btn btn-cancel hidden">Cancel</button>
+        </div>
+    </div>
+
+    <!-- WhatsApp Prompt Modal (for per-bill messages) -->
+    <div id="whatsappPromptOverlay" class="message-box-overlay hidden"></div>
+    <div id="whatsappPrompt" class="whatsapp-prompt hidden">
+        <h3 class="text-xl font-semibold mb-4">Send Unmatched Payment Details</h3>
+        <p class="text-gray-700 mb-4">You can send a templated or custom message for this payment:</p>
+        <div class="p-4 bg-gray-50 rounded-lg shadow-inner mb-4">
+            <p class="text-gray-600"><strong>Selected Payment:</strong> <span id="selectedPaymentDetails"></span></p>
+        </div>
+        <div class="form-group">
+            <label for="whatsappMessageTemplate">Message Template:</label>
+            <textarea id="whatsappMessageTemplate" class="w-full p-2 border rounded-lg" rows="4" readonly>Hello! We have not received payment of Rs. [AMOUNT] for your Bill Number [BILL_NUMBER] on [DATE]. If you have made the payment, please share the payment details. Thank you!</textarea>
+        </div>
+        <div class="form-group">
+            <label for="customWhatsappMessage">Or enter custom message:</label>
+            <textarea id="customWhatsappMessage" class="w-full p-2 border rounded-lg" rows="4" placeholder="Enter your custom message here..."></textarea>
+        </div>
+        <div class="form-group">
+            <label for="whatsappNumberInput">Customer's WhatsApp Number (with country code, e.g., 91xxxxxxxxxx):</label>
+            <input type="text" id="whatsappNumberInput" placeholder="Enter WhatsApp Number" class="rounded-lg">
+        </div>
+        <div class="button-group mt-6">
+            <button class="btn btn-primary" id="sendWhatsappBtn">Send WhatsApp Message</button>
+            <button class="btn btn-cancel" id="cancelWhatsappBtn">Cancel</button>
+        </div>
+        <p class="text-sm text-gray-500 mt-4">Note: This will open WhatsApp Web/App. You will need to manually confirm sending the message.</p>
+    </div>
+
+    <script>
+        // --- Global Data Storage and Initialization ---
+        const LOCAL_STORAGE_KEY = 'pvs_app_data';
+
+        let pvsData = {
+            sheet1: [], // Stores { date, billAmount, receivedAmount, status, billNo, receivedSource }
+            sheet2: [], // Stores unmatched { date, billAmount, receivedAmount, status, billNo, receivedSource }
+            sheet5: []  // Stores imported CSV data temporarily { [header1]: value, [header2]: value, ... }
+        };
+
+        // Temporary arrays for batch entry
+        let tempBillEntries = [];
+        let tempReceivedEntries = [];
+
+        // Current selected date for entry forms
+        let currentSelectedDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+        // DOM Elements
+        const pages = {
+            'dashboard': document.getElementById('dashboard-section'),
+            'bill-entry': document.getElementById('bill-entry-section'),
+            'recheck-entry': document.getElementById('recheck-entry-section'), // Renamed to received-entry internally
+            'reconcile': document.getElementById('reconcile-section'),
+            'import-data': document.getElementById('import-data-section'),
+            'csv-report': document.getElementById('csv-report-section'),
+            'reports': document.getElementById('reports-section'),
+            'whatsapp-report': document.getElementById('whatsapp-report-section')
+        };
+        const navItems = {
+            'dashboard': document.getElementById('nav-dashboard'),
+            'bill-entry': document.getElementById('nav-bill-entry'),
+            'recheck-entry': document.getElementById('nav-recheck-entry'), // Renamed to received-entry internally
+            'reconcile': document.getElementById('nav-reconcile'),
+            'import-data': document.getElementById('nav-import-data'),
+            'csv-report': document.getElementById('nav-csv-report'),
+            'reports': document.getElementById('nav-reports'),
+            'whatsapp-report': document.getElementById('nav-whatsapp-report'),
+            'reset-all-data': document.getElementById('nav-reset-all-data'),
+            'exit': document.getElementById('nav-exit'),
+            // Mobile navigation items
+            'mobile-dashboard': document.getElementById('mobile-nav-dashboard'),
+            'mobile-bill-entry': document.getElementById('mobile-nav-bill-entry'),
+            'mobile-recheck-entry': document.getElementById('mobile-nav-recheck-entry'),
+            'mobile-reports': document.getElementById('mobile-nav-reports'),
+            'mobile-whatsapp-report': document.getElementById('mobile-nav-whatsapp-report')
+        };
+
+        // Bill Entry Elements (for adding to temp list)
+        const entryDateBillInput = document.getElementById('entryDateBill');
+        const billNoInput = document.getElementById('billNoInput');
+        const billAmountInput = document.getElementById('billAmountInput');
+        const addBillToTempListBtn = document.getElementById('addBillToTempListBtn');
+        const tempBillEntriesTableBody = document.querySelector('#tempBillEntriesTable tbody');
+        const saveAllBillsBtn = document.getElementById('saveAllBillsBtn');
+        const clearTempBillsBtn = document.getElementById('clearTempBillsBtn');
+
+        // Bill Entry Elements (for managing existing bills)
+        const billNoSearchInput = document.getElementById('billNoSearchInput');
+        const billAmountUpdateInput = document.getElementById('billAmountUpdateInput');
+        const searchBillBtn = document.getElementById('searchBillBtn');
+        const updateBillBtn = document.getElementById('updateBillBtn');
+        const deleteBillBtn = document.getElementById('deleteBillBtn');
+        const billEntryDisplay = document.getElementById('billEntryDisplay');
+
+        // Received Entry Elements
+        const entryDateReceivedInput = document.getElementById('entryDateReceived');
+        const receivedAmountInput = document.getElementById('receivedAmountInput');
+        const receivedSourceInput = document.getElementById('receivedSourceInput');
+        const addReceivedToTempListBtn = document.getElementById('addReceivedToTempListBtn');
+        const tempReceivedEntriesTableBody = document.querySelector('#tempReceivedEntriesTable tbody');
+        const saveAllReceivedBtn = document.getElementById('saveAllReceivedBtn');
+        const clearTempReceivedBtn = document.getElementById('clearTempReceivedBtn');
+
+        // Reconcile Elements
+        const runPVSBtn = document.getElementById('runPVSBtn');
+        const reconciliationStatus = document.getElementById('reconciliationStatus');
+
+        // Import Data Elements
+        const csvFileInput = document.getElementById('csvFileInput');
+        const csvHeadersSelect = document.getElementById('csvHeadersSelect');
+        const loadCsvBtn = document.getElementById('loadCsvBtn');
+        const importAmountColumnBtn = document.getElementById('importAmountColumnBtn');
+        const importStatus = document.getElementById('importStatus');
+
+        // Dashboard Elements
+        const totalBillEntries = document.getElementById('totalBillEntries');
+        const totalReceivedEntries = document.getElementById('totalReceivedEntries');
+        const totalPendingPayments = document.getElementById('totalPendingPayments');
+        const totalUnmatchedEntries = document.getElementById('totalUnmatchedEntries');
+
+        // CSV Report Elements
+        const csvReportFilter = document.getElementById('csvReportFilter');
+        const csvDataTableHead = document.querySelector('#csvDataTable thead');
+        const csvDataTableBody = document.querySelector('#csvDataTable tbody');
+        const printCsvReportBtn = document.getElementById('printCsvReportBtn');
+
+        // Reports Elements
+        const reportFilterDate = document.getElementById('reportFilterDate');
+        const reportFilterAmount = document.getElementById('reportFilterAmount');
+        const matchedDataTableBody = document.querySelector('#matchedDataTable tbody');
+        const unmatchedDataTableBody = document.querySelector('#unmatchedDataTable tbody');
+        const receivedSourceMasterTableBody = document.querySelector('#receivedSourceMasterTable tbody');
+        const printAllReportsBtn = document.getElementById('printAllReportsBtn');
+        const printMatchedReportsBtn = document.getElementById('printMatchedReportsBtn');
+        const printUnmatchedReportsBtn = document.getElementById('printUnmatchedReportsBtn');
+
+        // WhatsApp Report Section Elements
+        const reportTypeSelect = document.getElementById('reportTypeSelect');
+        const whatsappReportNumberInput = document.getElementById('whatsappReportNumberInput');
+        const sendReportWhatsappBtn = document.getElementById('sendReportWhatsappBtn');
+
+        // Message Box Elements
+        const messageBoxOverlay = document.getElementById('messageBoxOverlay');
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxTitle = document.getElementById('messageBoxTitle');
+        const messageBoxContent = document.getElementById('messageBoxContent');
+        const messageBoxOkBtn = document.getElementById('messageBoxOkBtn');
+        const messageBoxCancelBtn = document.getElementById('messageBoxCancelBtn');
+
+        // WhatsApp Prompt Elements (for per-bill messages)
+        const whatsappPromptOverlay = document.getElementById('whatsappPromptOverlay');
+        const whatsappPrompt = document.getElementById('whatsappPrompt');
+        const selectedPaymentDetails = document.getElementById('selectedPaymentDetails');
+        const whatsappMessageTemplate = document.getElementById('whatsappMessageTemplate');
+        const customWhatsappMessage = document.getElementById('customWhatsappMessage');
+        const whatsappNumberInput = document.getElementById('whatsappNumberInput');
+        const sendWhatsappBtn = document.getElementById('sendWhatsappBtn');
+        const cancelWhatsappBtn = document.getElementById('cancelWhatsappBtn');
+
+        let resolveMessageBoxPromise;
+        let currentSelectedUnmatchedPayment = null; // To store the currently selected unmatched payment for WhatsApp
+
+        // --- Utility Functions ---
+
+        /**
+         * Displays a custom message box.
+         * @param {string} title - The title of the message box.
+         * @param {string} message - The content message.
+         * @param {boolean} isConfirm - If true, shows OK and Cancel buttons.
+         * @returns {Promise<boolean>} Resolves to true for OK, false for Cancel.
+         */
+        function showMessageBox(title, message, isConfirm = false) {
+            messageBoxTitle.textContent = title;
+            messageBoxContent.textContent = message;
+            messageBoxCancelBtn.classList.toggle('hidden', !isConfirm);
+            messageBoxOverlay.classList.remove('hidden');
+            messageBox.classList.remove('hidden');
+
+            return new Promise(resolve => {
+                resolveMessageBoxPromise = resolve;
+            });
+        }
+
+        /**
+         * Loads data from localStorage.
+         */
+        function loadData() {
+            try {
+                const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (storedData) {
+                    pvsData = JSON.parse(storedData);
+                    // Ensure all sheets exist if they were empty in storage
+                    if (!pvsData.sheet1) pvsData.sheet1 = [];
+                    if (!pvsData.sheet2) pvsData.sheet2 = [];
+                    if (!pvsData.sheet5) pvsData.sheet5 = [];
+
+                    // Data migration if old "paytm" or "recheck" keys exist
+                    pvsData.sheet1.forEach(entry => {
+                        if (entry.paytm !== undefined && entry.billAmount === undefined) {
+                            entry.billAmount = entry.paytm;
+                            delete entry.paytm;
+                        }
+                        if (entry.recheck !== undefined && entry.receivedAmount === undefined) {
+                            entry.receivedAmount = entry.recheck;
+                            delete entry.recheck;
+                        }
+                        if (entry.recheckSource !== undefined && entry.receivedSource === undefined) {
+                            entry.receivedSource = entry.recheckSource;
+                            delete entry.recheckSource;
+                        }
+                    });
+                    pvsData.sheet2.forEach(entry => {
+                        if (entry.paytm !== undefined && entry.billAmount === undefined) {
+                            entry.billAmount = entry.paytm;
+                            delete entry.paytm;
+                        }
+                        if (entry.recheck !== undefined && entry.receivedAmount === undefined) {
+                            entry.receivedAmount = entry.recheck;
+                            delete entry.recheck;
+                        }
+                        if (entry.recheckSource !== undefined && entry.receivedSource === undefined) {
+                            entry.receivedSource = entry.recheckSource;
+                            delete entry.recheckSource;
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Error loading data from localStorage:", e);
+                showMessageBox("Error", "Could not load saved data. Starting fresh.");
+                pvsData = { sheet1: [], sheet2: [], sheet5: [] }; // Reset if corrupted
+            }
+        }
+
+        /**
+         * Saves data to localStorage.
+         */
+        function saveData() {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(pvsData));
+                console.log("Data saved to local storage.");
+            } catch (e) {
+                console.error("Error saving data to localStorage:", e);
+                showMessageBox("Error", "Could not save data. Please check browser storage settings.");
+            }
+        }
+
+        /**
+         * Sets the date input fields to the current selected date.
+         */
+        function setDateInputs() {
+            entryDateBillInput.value = currentSelectedDate;
+            entryDateReceivedInput.value = currentSelectedDate;
+            reportFilterDate.value = currentSelectedDate; // Also set for report filter
+        }
+
+        /**
+         * Switches the active page/section.
+         * @param {string} pageId - The ID of the page to show (e.g., 'bill-entry').
+         */
+        function showPage(pageId) {
+            // Hide all pages
+            Object.values(pages).forEach(page => page.classList.add('hidden'));
+            // Remove active class from all nav items (sidebar and mobile)
+            Object.values(navItems).forEach(item => item.classList.remove('active'));
+
+            // Show the selected page
+            const targetPage = pages[pageId];
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+            }
+
+            // Set active class for corresponding nav item
+            // For sidebar
+            const sidebarNavItem = document.getElementById(`nav-${pageId}`);
+            if (sidebarNavItem) {
+                sidebarNavItem.classList.add('active');
+            }
+            // For mobile nav
+            const mobileNavItem = document.getElementById(`mobile-nav-${pageId}`);
+            if (mobileNavItem) {
+                mobileNavItem.classList.add('active');
+            }
+
+            // Perform page-specific initialization
+            if (pageId === 'reports' || pageId === 'dashboard') {
+                renderReports(); // Render reports and dashboard stats
+            }
+            if (pageId === 'csv-report') {
+                renderCsvReport(); // Render CSV report data
+            }
+            if (pageId === 'bill-entry') {
+                renderTempBillTable(); // Render temporary bills when navigating to bill entry
+            }
+            if (pageId === 'recheck-entry') {
+                renderTempReceivedTable(); // Render temporary received entries when navigating to received entry
+            }
+            // Update date inputs whenever a page is shown
+            setDateInputs();
+        }
+
+        // --- Bill Entry Functions ---
+
+        /**
+         * Adds a new bill entry to the temporary list.
+         */
+        function addBillToTempList() {
+            const billNo = billNoInput.value.trim();
+            const billAmount = parseFloat(billAmountInput.value);
+            const entryDate = entryDateBillInput.value;
+
+            if (!billNo || isNaN(billAmount) || !entryDate) {
+                showMessageBox("Incomplete Input", "Please enter Bill Number, a valid Bill Amount, and Entry Date.");
+                return;
+            }
+
+            // Check for duplicate bill number in the temporary list
+            const existingTempEntry = tempBillEntries.find(entry => entry.billNo === billNo);
+            if (existingTempEntry) {
+                showMessageBox("Duplicate Bill Number", "This Bill Number is already in the list to be saved. Please enter a unique Bill Number.");
+                return;
+            }
+
+            // Check for duplicate bill number in the main data (sheet1)
+            const existingMainEntry = pvsData.sheet1.find(entry => entry.billNo === billNo);
+            if (existingMainEntry) {
+                showMessageBox("Duplicate Bill Number", "This Bill Number already exists in your saved data. Use 'Manage Existing Bill Entries' to update or delete it.");
+                return;
+            }
+
+            tempBillEntries.push({
+                date: entryDate,
+                billAmount: billAmount,
+                receivedAmount: null,
+                status: "Pending",
+                billNo: billNo,
+                receivedSource: null
+            });
+            renderTempBillTable();
+            billNoInput.value = '';
+            billAmountInput.value = '';
+            billNoInput.focus(); // Keep focus for continuous entry
+        }
+
+        /**
+         * Renders the temporary bill entries table.
+         */
+        function renderTempBillTable() {
+            tempBillEntriesTableBody.innerHTML = '';
+            if (tempBillEntries.length === 0) {
+                tempBillEntriesTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">No bills added to list yet.</td></tr>';
+                return;
+            }
+            tempBillEntries.forEach((entry, index) => {
+                const row = tempBillEntriesTableBody.insertRow();
+                row.insertCell().textContent = entry.date;
+                row.insertCell().textContent = entry.billNo;
+                row.insertCell().textContent = entry.billAmount;
+                const actionCell = row.insertCell();
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.classList.add('btn', 'btn-danger', 'text-sm', 'py-1', 'px-2');
+                deleteButton.onclick = () => deleteTempBillEntry(index);
+                actionCell.appendChild(deleteButton);
+            });
+        }
+
+        /**
+         * Deletes a temporary bill entry from the list.
+         * @param {number} index - The index of the entry to delete.
+         */
+        async function deleteTempBillEntry(index) {
+            const confirmDelete = await showMessageBox("Confirm Deletion", "Are you sure you want to remove this bill from the temporary list?", true);
+            if (confirmDelete) {
+                tempBillEntries.splice(index, 1);
+                renderTempBillTable();
+            }
+        }
+
+        /**
+         * Saves all temporary bill entries to the main data.
+         */
+        async function saveAllBills() {
+            if (tempBillEntries.length === 0) {
+                showMessageBox("No Entries", "There are no bills in the list to save.");
+                return;
+            }
+
+            const confirmSave = await showMessageBox("Confirm Save", `Are you sure you want to save ${tempBillEntries.length} bill entries?`, true);
+            if (!confirmSave) {
+                return;
+            }
+
+            pvsData.sheet1.push(...tempBillEntries);
+            tempBillEntries = []; // Clear temporary list
+            saveData();
+            renderTempBillTable(); // Re-render empty table
+            showMessageBox("Success", "All bill entries saved successfully!");
+            billNoInput.focus(); // Focus for new batch entry
+        }
+
+        /**
+         * Clears all temporary bill entries from the list.
+         */
+        async function clearTempBills() {
+            if (tempBillEntries.length === 0) {
+                showMessageBox("No Entries", "The list of bills is already empty.");
+                return;
+            }
+            const confirmClear = await showMessageBox("Confirm Clear", "Are you sure you want to clear all bills from the temporary list? This will not affect saved data.", true);
+            if (confirmClear) {
+                tempBillEntries = [];
+                renderTempBillTable();
+                showMessageBox("List Cleared", "Temporary bill list cleared.");
+            }
+        }
+
+        /**
+         * Searches for a bill number and displays its details. (Existing functionality)
+         */
+        function searchBillEntry() {
+            const billNo = billNoSearchInput.value.trim();
+
+            if (!billNo) {
+                showMessageBox("No Input", "Please enter a Bill Number to search.");
+                return;
+            }
+
+            const foundEntry = pvsData.sheet1.find(entry => entry.billNo === billNo);
+
+            if (foundEntry) {
+                billEntryDisplay.innerHTML = `
+                    <strong>Date:</strong> ${foundEntry.date || 'N/A'}<br>
+                    <strong>Bill Number:</strong> ${foundEntry.billNo}<br>
+                    <strong>Bill Amount:</strong> ${foundEntry.billAmount}<br>
+                    <strong>Received Amount:</strong> ${foundEntry.receivedAmount !== null ? foundEntry.receivedAmount : 'N/A'}<br>
+                    <strong>Received Source:</strong> ${foundEntry.receivedSource || 'N/A'}<br>
+                    <strong>Status:</strong> ${foundEntry.status}
+                `;
+                billAmountUpdateInput.value = foundEntry.billAmount; // Pre-fill for potential update
+                entryDateBillInput.value = foundEntry.date || currentSelectedDate; // Pre-fill date
+                showMessageBox("Bill Number Found", `Bill Number '${billNo}' found.`);
+            } else {
+                billEntryDisplay.textContent = "No bill selected.";
+                billAmountUpdateInput.value = '';
+                showMessageBox("Not Found", `Bill Number '${billNo}' not found.`);
+            }
+        }
+
+        /**
+         * Updates the Bill amount for an existing bill number. (Existing functionality)
+         */
+        function updateBillEntry() {
+            const billNo = billNoSearchInput.value.trim();
+            const newBillAmount = parseFloat(billAmountUpdateInput.value);
+            // entryDateBillInput is used for new entries, not for updating existing ones via this form.
+            // If date update is needed, a separate input/logic would be required for existing entries.
+
+            if (!billNo || isNaN(newBillAmount)) {
+                showMessageBox("Incomplete Input", "Please enter Bill Number and a valid new Bill Amount.");
+                return;
+            }
+
+            const entryIndex = pvsData.sheet1.findIndex(entry => entry.billNo === billNo);
+
+            if (entryIndex !== -1) {
+                pvsData.sheet1[entryIndex].billAmount = newBillAmount;
+                saveData();
+                showMessageBox("Success", `Bill amount for Bill Number '${billNo}' updated successfully!`);
+                billNoSearchInput.value = '';
+                billAmountUpdateInput.value = '';
+                billEntryDisplay.textContent = "No bill selected.";
+            } else {
+                showMessageBox("Not Found", `Bill Number '${billNo}' not found. Cannot update.`);
+            }
+        }
+
+        /**
+         * Deletes a bill entry based on the bill number. (Existing functionality)
+         */
+        async function deleteBillEntry() {
+            const billNo = billNoSearchInput.value.trim();
+
+            if (!billNo) {
+                showMessageBox("No Input", "Please enter a Bill Number to delete.");
+                return;
+            }
+
+            const confirmDelete = await showMessageBox("Confirm Deletion", `Are you sure you want to delete Bill Number '${billNo}' and its associated bill value?`, true);
+
+            if (!confirmDelete) {
+                return; // User cancelled
+            }
+
+            const initialLength = pvsData.sheet1.length;
+            pvsData.sheet1 = pvsData.sheet1.filter(entry => entry.billNo !== billNo);
+
+            if (pvsData.sheet1.length < initialLength) {
+                saveData();
+                showMessageBox("Deleted", `Bill Number '${billNo}' and bill value deleted successfully!`);
+                billNoSearchInput.value = '';
+                billAmountUpdateInput.value = '';
+                billEntryDisplay.textContent = "No bill selected.";
+            } else {
+                showMessageBox("Not Found", `Bill Number '${billNo}' not found.`);
+            }
+        }
+
+        // --- Received Entry Functions ---
+
+        /**
+         * Adds a new received entry to the temporary list.
+         */
+        function addReceivedToTempList() {
+            const receivedAmount = parseFloat(receivedAmountInput.value);
+            const receivedSource = receivedSourceInput.value.trim();
+            const entryDate = entryDateReceivedInput.value;
+
+            if (isNaN(receivedAmount) || !entryDate) {
+                showMessageBox("Incomplete Input", "Please enter a valid Received Amount and Entry Date.");
+                return;
+            }
+
+            tempReceivedEntries.push({
+                date: entryDate,
+                billAmount: null, // No bill associated initially
+                receivedAmount: receivedAmount,
+                status: "Pending",
+                billNo: null, // No bill number associated directly with received entry
+                receivedSource: receivedSource || 'Manual Entry'
+            });
+            renderTempReceivedTable();
+            receivedAmountInput.value = '';
+            // Keep receivedSourceInput as is for convenience or reset to default
+            receivedAmountInput.focus(); // Set focus for next entry
+        }
+
+        /**
+         * Renders the temporary received entries table.
+         */
+        function renderTempReceivedTable() {
+            tempReceivedEntriesTableBody.innerHTML = '';
+            if (tempReceivedEntries.length === 0) {
+                tempReceivedEntriesTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">No received entries added to list yet.</td></tr>';
+                return;
+            }
+            tempReceivedEntries.forEach((entry, index) => {
+                const row = tempReceivedEntriesTableBody.insertRow();
+                row.insertCell().textContent = entry.date;
+                row.insertCell().textContent = entry.receivedAmount;
+                row.insertCell().textContent = entry.receivedSource;
+                const actionCell = row.insertCell();
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.classList.add('btn', 'btn-danger', 'text-sm', 'py-1', 'px-2');
+                deleteButton.onclick = () => deleteTempReceivedEntry(index);
+                actionCell.appendChild(deleteButton);
+            });
+        }
+
+        /**
+         * Deletes a temporary received entry from the list.
+         * @param {number} index - The index of the entry to delete.
+         */
+        async function deleteTempReceivedEntry(index) {
+            const confirmDelete = await showMessageBox("Confirm Deletion", "Are you sure you want to remove this received entry from the temporary list?", true);
+            if (confirmDelete) {
+                tempReceivedEntries.splice(index, 1);
+                renderTempReceivedTable();
+            }
+        }
+
+        /**
+         * Saves all temporary received entries to the main data.
+         */
+        async function saveAllReceived() {
+            if (tempReceivedEntries.length === 0) {
+                showMessageBox("No Entries", "There are no received entries in the list to save.");
+                return;
+            }
+
+            const confirmSave = await showMessageBox("Confirm Save", `Are you sure you want to save ${tempReceivedEntries.length} received entries?`, true);
+            if (!confirmSave) {
+                return;
+            }
+
+            pvsData.sheet1.push(...tempReceivedEntries);
+            tempReceivedEntries = []; // Clear temporary list
+            saveData();
+            renderTempReceivedTable(); // Re-render empty table
+            showMessageBox("Success", "All received entries saved successfully!");
+            receivedAmountInput.focus(); // Focus for new batch entry
+        }
+
+        /**
+         * Clears all temporary received entries from the list.
+         */
+        async function clearTempReceived() {
+            if (tempReceivedEntries.length === 0) {
+                showMessageBox("No Entries", "The list of received entries is already empty.");
+                return;
+            }
+            const confirmClear = await showMessageBox("Confirm Clear", "Are you sure you want to clear all received entries from the temporary list? This will not affect saved data.", true);
+            if (confirmClear) {
+                tempReceivedEntries = [];
+                renderTempReceivedTable();
+                showMessageBox("List Cleared", "Temporary received entries list cleared.");
+            }
+        }
+
+        // --- Reconciliation (PVS) Function ---
+
+        /**
+         * Performs the payment reconciliation logic.
+         * Mimics the VBA PVS() subroutine.
+         */
+        function runPVS() {
+            // Clear old records in Sheet2 (unmatched list)
+            pvsData.sheet2 = [];
+
+            // Create a temporary array to track which received values from sheet1 have been used in a match.
+            // This is crucial to ensure each received value is used only once.
+            const receivedUsed = new Array(pvsData.sheet1.length).fill(false);
+
+            // First, iterate through all entries to find matches and update status in sheet1
+            for (let i = 0; i < pvsData.sheet1.length; i++) {
+                const billEntry = pvsData.sheet1[i];
+
+                // Only process entries that have a billAmount value and are currently pending
+                if (billEntry.billAmount !== null && billEntry.status === "Pending") {
+                    let matchFoundForBill = false;
+                    for (let j = 0; j < pvsData.sheet1.length; j++) {
+                        const receivedEntry = pvsData.sheet1[j];
+
+                        // Check if it's a received entry, it's not yet used, and amounts match
+                        if (receivedEntry.receivedAmount !== null && !receivedUsed[j] && billEntry.billAmount === receivedEntry.receivedAmount) {
+                            matchFoundForBill = true;
+                            receivedUsed[j] = true; // Mark this received entry as used
+                            billEntry.status = "Complete"; // Update status of the Bill entry
+                            billEntry.receivedAmount = receivedEntry.receivedAmount; // Assign the matched received value
+                            billEntry.receivedSource = receivedEntry.receivedSource; // Assign the matched received source
+                            break; // Move to the next Bill entry
+                        }
+                    }
+                }
+            }
+
+            // Second pass: Populate sheet2 with truly unmatched entries
+            let anyUnmatched = false;
+
+            // Add unmatched Bill entries to sheet2
+            for (let i = 0; i < pvsData.sheet1.length; i++) {
+                const entry = pvsData.sheet1[i];
+                if (entry.billAmount !== null && entry.status === "Pending") {
+                    pvsData.sheet2.push({
+                        date: entry.date,
+                        billAmount: entry.billAmount,
+                        receivedAmount: "Not Matched",
+                        status: "Pending",
+                        billNo: entry.billNo,
+                        receivedSource: entry.receivedSource // Will be null for Bill entries
+                    });
+                    anyUnmatched = true;
+                }
+            }
+
+            // Add unmatched Received entries to sheet2
+            for (let j = 0; j < pvsData.sheet1.length; j++) {
+                const entry = pvsData.sheet1[j];
+                // If it's a received entry and it was not used in a match
+                if (entry.receivedAmount !== null && !receivedUsed[j]) {
+                    pvsData.sheet2.push({
+                        date: entry.date,
+                        billAmount: "", // Leave Bill cell empty as per VBA
+                        receivedAmount: entry.receivedAmount,
+                        status: "Pending",
+                        billNo: null, // No bill number for unmatched received
+                        receivedSource: entry.receivedSource
+                    });
+                    anyUnmatched = true;
+                }
+            }
+
+            saveData();
+
+            if (!anyUnmatched) {
+                reconciliationStatus.textContent = "All payments matched!";
+                showMessageBox("PVS", "All payments matched!");
+            } else {
+                reconciliationStatus.textContent = "Some payments are pending. Check reports.";
+                showMessageBox("PVS", "Some payments are pending. Please check the reports section for unmatched entries.");
+            }
+            renderReports(); // Update reports and dashboard after reconciliation
+        }
+
+
+        // --- Import Data Functions ---
+
+        /**
+         * Loads CSV headers into the select dropdown.
+         */
+        function loadCsvHeaders() {
+            const file = csvFileInput.files[0];
+            if (!file) {
+                showMessageBox("No File Selected", "Please select a CSV file first.");
+                return;
+            }
+
+            if (file.type !== 'text/csv') {
+                showMessageBox("Invalid File Type", "Please select a CSV file (.csv). Excel files (.xls, .xlsx) are not directly supported for import in the browser.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                if (lines.length === 0) {
+                    showMessageBox("Empty File", "The selected CSV file is empty.");
+                    return;
+                }
+                const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
+
+                csvHeadersSelect.innerHTML = '<option value="">-- Select a Header --</option>';
+                headers.forEach(header => {
+                    const option = document.createElement('option');
+                    option.value = header;
+                    option.textContent = header;
+                    csvHeadersSelect.appendChild(option);
+                });
+                importStatus.textContent = `Headers loaded from '${file.name}'.`;
+
+                // Store raw CSV data in sheet5 temporarily
+                pvsData.sheet5 = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line) {
+                        const values = line.split(',').map(val => val.trim().replace(/"/g, ''));
+                        const rowObject = {};
+                        headers.forEach((header, index) => {
+                            rowObject[header] = values[index] || '';
+                        });
+                        pvsData.sheet5.push(rowObject);
+                    }
+                }
+                saveData();
+                renderCsvReport(); // Render the CSV report after loading data
+            };
+            reader.onerror = () => {
+                showMessageBox("Error Reading File", "Could not read the selected file.");
+            };
+            reader.readAsText(file);
+        }
+
+        /**
+         * Imports the selected "Amount" column data into Received entries.
+         */
+        function importAmountColumn() {
+            const selectedHeader = csvHeadersSelect.value;
+
+            if (!selectedHeader) {
+                showMessageBox("No Column Selected", "Please load CSV headers and select a column to import.");
+                return;
+            }
+
+            if (selectedHeader.toLowerCase() !== 'amount') {
+                showMessageBox("Invalid Column", "Please select only the 'Amount' column for import.");
+                return;
+            }
+
+            if (pvsData.sheet5.length === 0) {
+                showMessageBox("No Data Loaded", "Please load a CSV file first using 'Load CSV Headers'.");
+                return;
+            }
+
+            // Clear existing received entries (those without a billAmount/billNo) before importing new ones
+            // This ensures that importing new CSV received data doesn't duplicate or mix with old manual received entries.
+            pvsData.sheet1 = pvsData.sheet1.filter(entry => entry.billAmount !== null || entry.billNo !== null);
+
+            pvsData.sheet5.forEach(row => {
+                const amountValue = parseFloat(row[selectedHeader]);
+                if (!isNaN(amountValue)) {
+                    pvsData.sheet1.push({
+                        date: currentSelectedDate, // Assign current selected date to imported entries
+                        billAmount: null,
+                        receivedAmount: amountValue,
+                        status: "Pending",
+                        billNo: null,
+                        receivedSource: 'CSV Import' // Default source for imported entries
+                    });
+                }
+            });
+
+            saveData();
+            showMessageBox("Success", `'${selectedHeader}' column data successfully imported into Received entries!`);
+            importStatus.textContent = `Successfully imported '${selectedHeader}' column.`;
+            csvFileInput.value = ''; // Clear file input
+            csvHeadersSelect.innerHTML = '<option value="">-- Select a Header --</option>'; // Clear headers
+        }
+
+        // --- Reports Functions ---
+
+        /**
+         * Renders the data tables for Matched and Unmatched entries, and updates dashboard summary counts.
+         */
+        function renderReports() {
+            const filterAmount = parseFloat(reportFilterAmount.value);
+            const filterDate = reportFilterDate.value;
+
+            // Filter Matched entries from sheet1
+            const filteredMatchedEntries = pvsData.sheet1.filter(entry => {
+                const dateMatch = !filterDate || entry.date === filterDate;
+                const amountMatch = isNaN(filterAmount) ||
+                                    (entry.billAmount !== null && entry.billAmount.toString().includes(filterAmount.toString())) ||
+                                    (entry.receivedAmount !== null && entry.receivedAmount.toString().includes(filterAmount.toString())) ||
+                                    (entry.billNo !== null && entry.billNo.toString().includes(filterAmount.toString()));
+                return entry.status === "Complete" && dateMatch && amountMatch;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+
+            // Filter Unmatched entries from sheet2
+            const filteredUnmatchedEntries = pvsData.sheet2.filter(entry => {
+                const dateMatch = !filterDate || entry.date === filterDate;
+                const amountMatch = isNaN(filterAmount) ||
+                                    (entry.billAmount !== null && entry.billAmount.toString().includes(filterAmount.toString())) ||
+                                    (entry.receivedAmount !== null && entry.receivedAmount.toString().includes(filterAmount.toString())) ||
+                                    (entry.billNo !== null && entry.billNo.toString().includes(filterAmount.toString()));
+                return dateMatch && amountMatch;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+
+
+            // Render Matched Table
+            matchedDataTableBody.innerHTML = '';
+            filteredMatchedEntries.forEach(entry => {
+                const row = matchedDataTableBody.insertRow();
+                row.insertCell().textContent = entry.date || 'N/A';
+                row.insertCell().textContent = entry.billAmount !== null ? entry.billAmount : '';
+                row.insertCell().textContent = entry.receivedAmount !== null ? entry.receivedAmount : '';
+                row.insertCell().textContent = entry.status;
+                row.insertCell().textContent = entry.billNo !== null ? entry.billNo : '';
+                row.insertCell().textContent = entry.receivedSource || '';
+            });
+
+            // Render Unmatched Table
+            unmatchedDataTableBody.innerHTML = '';
+            filteredUnmatchedEntries.forEach(entry => {
+                const row = unmatchedDataTableBody.insertRow();
+                row.insertCell().textContent = entry.date || 'N/A';
+                row.insertCell().textContent = entry.billAmount !== null ? entry.billAmount : '';
+                row.insertCell().textContent = entry.receivedAmount !== null ? entry.receivedAmount : '';
+                row.insertCell().textContent = entry.status;
+                row.insertCell().textContent = entry.billNo !== null ? entry.billNo : '';
+                row.insertCell().textContent = entry.receivedSource || '';
+
+                // Add WhatsApp action button for each unmatched entry
+                const actionCell = row.insertCell();
+                const whatsappButton = document.createElement('button');
+                whatsappButton.textContent = 'Send WhatsApp';
+                whatsappButton.classList.add('btn', 'btn-secondary', 'text-sm', 'py-1', 'px-2');
+                whatsappButton.onclick = () => openWhatsAppBillPrompt(entry);
+                actionCell.appendChild(whatsappButton);
+            });
+
+            // Render Received Payments by Source Master Table
+            receivedSourceMasterTableBody.innerHTML = '';
+            const receivedSourceSummary = {}; // { source: { totalAmount: 0, count: 0 } }
+
+            pvsData.sheet1.forEach(entry => {
+                if (entry.receivedAmount !== null && entry.receivedSource) {
+                    const source = entry.receivedSource;
+                    if (!receivedSourceSummary[source]) {
+                        receivedSourceSummary[source] = { totalAmount: 0, count: 0 };
+                    }
+                    receivedSourceSummary[source].totalAmount += entry.receivedAmount;
+                    receivedSourceSummary[source].count++;
+                }
+            });
+
+            for (const source in receivedSourceSummary) {
+                const row = receivedSourceMasterTableBody.insertRow();
+                row.insertCell().textContent = source;
+                row.insertCell().textContent = receivedSourceSummary[source].totalAmount.toFixed(2);
+                row.insertCell().textContent = receivedSourceSummary[source].count;
+            }
+            if (Object.keys(receivedSourceSummary).length === 0) {
+                receivedSourceMasterTableBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500">No received payment data.</td></tr>';
+            }
+
+
+            // Update dashboard summary counts
+            totalBillEntries.textContent = pvsData.sheet1.filter(e => e.billAmount !== null).length;
+            totalReceivedEntries.textContent = pvsData.sheet1.filter(e => e.receivedAmount !== null).length;
+            totalPendingPayments.textContent = pvsData.sheet1.filter(e => e.status === "Pending" && e.billAmount !== null).length;
+            totalUnmatchedEntries.textContent = pvsData.sheet2.length;
+        }
+
+        /**
+         * Renders the CSV data table.
+         */
+        function renderCsvReport() {
+            const filterText = csvReportFilter.value.toLowerCase().trim();
+
+            csvDataTableHead.innerHTML = '';
+            csvDataTableBody.innerHTML = '';
+
+            if (pvsData.sheet5.length === 0) {
+                csvDataTableBody.innerHTML = '<tr><td colspan="100%" class="text-center text-gray-500">No CSV data loaded.</td></tr>';
+                return;
+            }
+
+            // Get headers from the first object
+            const headers = Object.keys(pvsData.sheet5[0]);
+            const headerRow = csvDataTableHead.insertRow();
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+
+            // Filter and render rows
+            const filteredCsvData = pvsData.sheet5.filter(row => {
+                if (filterText === '') return true; // No filter, show all
+                return Object.values(row).some(value =>
+                    String(value).toLowerCase().includes(filterText)
+                );
+            });
+
+            if (filteredCsvData.length === 0) {
+                csvDataTableBody.innerHTML = '<tr><td colspan="' + headers.length + '" class="text-center text-gray-500">No matching data found.</td></tr>';
+                return;
+            }
+
+            filteredCsvData.forEach(rowObject => {
+                const row = csvDataTableBody.insertRow();
+                headers.forEach(header => {
+                    row.insertCell().textContent = rowObject[header];
+                });
+            });
+        }
+
+        /**
+         * Triggers the browser's print dialog for a specific section.
+         * @param {string} sectionId - The ID of the section to print (e.g., 'reports-section', 'csv-report-section').
+         * @param {string} reportType - 'all', 'matched', or 'unmatched' for reports section.
+         */
+        function printSection(sectionId, reportType = 'all') {
+            // Add a class to body to indicate which section to print
+            document.body.classList.add('print-mode-' + sectionId);
+
+            // Temporarily hide/show tables based on reportType for 'reports-section'
+            if (sectionId === 'reports-section') {
+                const matchedDiv = document.getElementById('matchedDataTable').closest('div');
+                const unmatchedDiv = document.getElementById('unmatchedDataTable').closest('div');
+                const receivedSourceDiv = document.getElementById('receivedSourceMasterTable').closest('div');
+                
+                const matchedHeading = matchedDiv.previousElementSibling; // The h3
+                const unmatchedHeading = unmatchedDiv.previousElementSibling; // The h3
+                const receivedSourceHeading = receivedSourceDiv.previousElementSibling; // The h3
+
+                if (reportType === 'matched') {
+                    unmatchedDiv.classList.add('hidden');
+                    unmatchedHeading.classList.add('hidden');
+                    receivedSourceDiv.classList.add('hidden');
+                    receivedSourceHeading.classList.add('hidden');
+                } else if (reportType === 'unmatched') {
+                    matchedDiv.classList.add('hidden');
+                    matchedHeading.classList.add('hidden');
+                    receivedSourceDiv.classList.add('hidden');
+                    receivedSourceHeading.classList.add('hidden');
+                } else if (reportType === 'all') {
+                    // Show all for 'all'
+                    matchedDiv.classList.remove('hidden');
+                    matchedHeading.classList.remove('hidden');
+                    unmatchedDiv.classList.remove('hidden');
+                    unmatchedHeading.classList.remove('hidden');
+                    receivedSourceDiv.classList.remove('hidden');
+                    receivedSourceHeading.classList.remove('hidden');
+                }
+            }
+
+            window.print();
+
+            // Remove the class and restore hidden tables after printing
+            document.body.classList.remove('print-mode-' + sectionId);
+            if (sectionId === 'reports-section') {
+                const matchedDiv = document.getElementById('matchedDataTable').closest('div');
+                const unmatchedDiv = document.getElementById('unmatchedDataTable').closest('div');
+                const receivedSourceDiv = document.getElementById('receivedSourceMasterTable').closest('div');
+
+                const matchedHeading = matchedDiv.previousElementSibling;
+                const unmatchedHeading = unmatchedDiv.previousElementSibling;
+                const receivedSourceHeading = receivedSourceDiv.previousElementSibling;
+
+                matchedDiv.classList.remove('hidden');
+                matchedHeading.classList.remove('hidden');
+                unmatchedDiv.classList.remove('hidden');
+                unmatchedHeading.classList.remove('hidden');
+                receivedSourceDiv.classList.remove('hidden');
+                receivedSourceHeading.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Shows the WhatsApp prompt modal for a specific bill.
+         * @param {object} paymentEntry - The payment entry to send a message about.
+         */
+        function openWhatsAppBillPrompt(paymentEntry) {
+            currentSelectedUnmatchedPayment = paymentEntry;
+            selectedPaymentDetails.textContent = `Date: ${paymentEntry.date || 'N/A'}, Bill No.: ${paymentEntry.billNo || 'N/A'}, Amount: ${paymentEntry.billAmount || paymentEntry.receivedAmount}`;
+            
+            // Reset custom message and WhatsApp number input
+            customWhatsappMessage.value = '';
+            whatsappNumberInput.value = '';
+
+            whatsappPromptOverlay.classList.remove('hidden');
+            whatsappPrompt.classList.remove('hidden');
+        }
+
+        /**
+         * Closes the WhatsApp prompt modal (for per-bill messages).
+         */
+        function closeWhatsappPrompt() {
+            whatsappPromptOverlay.classList.add('hidden');
+            whatsappPrompt.classList.add('hidden');
+            currentSelectedUnmatchedPayment = null;
+        }
+
+        /**
+         * Generates and opens the WhatsApp Web link for the selected unmatched payment.
+         */
+        function sendWhatsappMessage() {
+            if (!currentSelectedUnmatchedPayment) {
+                showMessageBox("No Payment Selected", "Please select an unmatched payment to send a WhatsApp message.");
+                return;
+            }
+
+            const whatsappNumber = whatsappNumberInput.value.trim();
+            if (!whatsappNumber) {
+                showMessageBox("WhatsApp Number Required", "Please enter the customer's WhatsApp number.");
+                return;
+            }
+
+            const paymentDate = currentSelectedUnmatchedPayment.date || 'N/A';
+            const paymentAmount = currentSelectedUnmatchedPayment.billAmount || currentSelectedUnmatchedPayment.receivedAmount;
+            const billNumber = currentSelectedUnmatchedPayment.billNo || 'N/A';
+
+            let messageToSend = customWhatsappMessage.value.trim();
+
+            if (!messageToSend) { // If custom message is empty, use template
+                messageToSend = whatsappMessageTemplate.value
+                    .replace('[BILL_NUMBER]', billNumber)
+                    .replace('[DATE]', paymentDate)
+                    .replace('[AMOUNT]', paymentAmount);
+            }
+
+            const encodedMessage = encodeURIComponent(messageToSend);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+            window.open(whatsappUrl, '_blank');
+            closeWhatsappPrompt();
+            showMessageBox("WhatsApp Message Sent", "WhatsApp Web/App has been opened. Please confirm sending the message.");
+        }
+
+        /**
+         * Shows the WhatsApp report sending modal.
+         */
+        function openWhatsAppReportPrompt() {
+            // No specific setup needed, just show the page
+            showPage('whatsapp-report');
+        }
+
+        /**
+         * Generates a summary of the selected report type and opens WhatsApp Web.
+         */
+        function sendReportViaWhatsapp() {
+            const selectedReportType = reportTypeSelect.value;
+            const whatsappNumber = whatsappReportNumberInput.value.trim();
+
+            if (!whatsappNumber) {
+                showMessageBox("WhatsApp Number Required", "Please enter a number to send the report via WhatsApp.");
+                return;
+            }
+
+            let reportSummary = "";
+            let reportData = [];
+            let reportTitle = "";
+
+            if (selectedReportType === 'unmatched') {
+                reportData = pvsData.sheet2;
+                reportTitle = "Unmatched Entries Report";
+                if (reportData.length === 0) {
+                    reportSummary = "No unmatched entries.";
+                } else {
+                    reportSummary = `Unmatched Entries Report (${reportData.length} entries):\n\n`;
+                    reportData.forEach(entry => {
+                        reportSummary += `Date: ${entry.date || 'N/A'}, Bill: ${entry.billNo || 'N/A'}, Amount: ${entry.billAmount || entry.receivedAmount}, Status: ${entry.status}\n`;
+                    });
+                }
+            } else if (selectedReportType === 'matched') {
+                reportData = pvsData.sheet1.filter(entry => entry.status === "Complete");
+                reportTitle = "Matched Entries Report";
+                if (reportData.length === 0) {
+                    reportSummary = "No matched entries.";
+                } else {
+                    reportSummary = `Matched Entries Report (${reportData.length} entries):\n\n`;
+                    reportData.forEach(entry => {
+                        reportSummary += `Date: ${entry.date || 'N/A'}, Bill: ${entry.billNo || 'N/A'}, Bill Amount: ${entry.billAmount}, Received Amount: ${entry.receivedAmount}\n`;
+                    });
+                }
+            } else if (selectedReportType === 'receivedSourceSummary') {
+                reportTitle = "Received Payment Summary by Source";
+                const receivedSourceSummary = {};
+                pvsData.sheet1.forEach(entry => {
+                    if (entry.receivedAmount !== null && entry.receivedSource) {
+                        const source = entry.receivedSource;
+                        if (!receivedSourceSummary[source]) {
+                            receivedSourceSummary[source] = { totalAmount: 0, count: 0 };
+                        }
+                        receivedSourceSummary[source].totalAmount += entry.receivedAmount;
+                        receivedSourceSummary[source].count++;
+                    }
+                });
+                if (Object.keys(receivedSourceSummary).length === 0) {
+                    reportSummary = "No received payment data.";
+                } else {
+                    reportSummary = `${reportTitle}:\n\n`;
+                    for (const source in receivedSourceSummary) {
+                        reportSummary += `Source: ${source}, Total Amount: ${receivedSourceSummary[source].totalAmount.toFixed(2)}, Entries: ${receivedSourceSummary[source].count}\n`;
+                    }
+                }
+            }
+            else if (selectedReportType === 'csv') {
+                reportData = pvsData.sheet5;
+                reportTitle = "CSV Import Report";
+                if (reportData.length === 0) {
+                    reportSummary = "No CSV import data.";
+                } else {
+                    reportSummary = `CSV Import Report (${reportData.length} rows):\n\n`;
+                    // Get headers for CSV report
+                    const headers = reportData.length > 0 ? Object.keys(reportData[0]) : [];
+                    reportData.forEach(row => {
+                        let rowString = "";
+                        headers.forEach(header => {
+                            rowString += `${header}: ${row[header]}, `;
+                        });
+                        reportSummary += rowString.slice(0, -2) + '\n'; // Remove trailing comma and space
+                    });
+                }
+            } else if (selectedReportType === 'allReports') { // Master Report
+                reportTitle = "Master Report (All Data)";
+                reportSummary = "--- Dashboard Summary ---\n";
+                reportSummary += `Total Bill Entries: ${pvsData.sheet1.filter(e => e.billAmount !== null).length}\n`;
+                reportSummary += `Total Received Entries: ${pvsData.sheet1.filter(e => e.receivedAmount !== null).length}\n`;
+                reportSummary += `Total Pending Payments: ${pvsData.sheet1.filter(e => e.status === "Pending" && e.billAmount !== null).length}\n`;
+                reportSummary += `Total Unmatched Entries: ${pvsData.sheet2.length}\n\n`;
+
+                reportSummary += "--- Matched Entries ---\n";
+                const matchedEntries = pvsData.sheet1.filter(entry => entry.status === "Complete");
+                if (matchedEntries.length === 0) {
+                    reportSummary += "No matched entries.\n";
+                } else {
+                    matchedEntries.forEach(entry => {
+                        reportSummary += `Date: ${entry.date || 'N/A'}, Bill: ${entry.billNo || 'N/A'}, Bill Amount: ${entry.billAmount}, Received Amount: ${entry.receivedAmount}, Source: ${entry.receivedSource}\n`;
+                    });
+                }
+                reportSummary += "\n--- Unmatched Entries ---\n";
+                if (pvsData.sheet2.length === 0) {
+                    reportSummary += "No unmatched entries.\n";
+                } else {
+                    pvsData.sheet2.forEach(entry => {
+                        reportSummary += `Date: ${entry.date || 'N/A'}, Bill: ${entry.billNo || 'N/A'}, Amount: ${entry.billAmount || entry.receivedAmount}, Status: ${entry.status}, Source: ${entry.receivedSource}\n`;
+                    });
+                }
+                reportSummary += "\n--- Received Payment Summary by Source ---\n";
+                const receivedSourceSummary = {};
+                pvsData.sheet1.forEach(entry => {
+                    if (entry.receivedAmount !== null && entry.receivedSource) {
+                        const source = entry.receivedSource;
+                        if (!receivedSourceSummary[source]) {
+                            receivedSourceSummary[source] = { totalAmount: 0, count: 0 };
+                        }
+                        receivedSourceSummary[source].totalAmount += entry.receivedAmount;
+                        receivedSourceSummary[source].count++;
+                    }
+                });
+                if (Object.keys(receivedSourceSummary).length === 0) {
+                    reportSummary += "No received payment data.\n";
+                } else {
+                    for (const source in receivedSourceSummary) {
+                        reportSummary += `Source: ${source}, Total Amount: ${receivedSourceSummary[source].totalAmount.toFixed(2)}, Entries: ${receivedSourceSummary[source].count}\n`;
+                    }
+                }
+            }
+
+
+            const fullMessage = `Hello! Here is your ${reportTitle}:\n\n${reportSummary}\n\nThank you!`;
+            const encodedMessage = encodeURIComponent(fullMessage);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+            window.open(whatsappUrl, '_blank');
+            showMessageBox("WhatsApp Report Sent", "WhatsApp Web/App has been opened. Please confirm sending the message.");
+        }
+
+
+        // --- Event Listeners ---
+        window.onload = () => {
+            loadData();
+            setDateInputs(); // Set initial date values
+            showPage('dashboard'); // Show the Dashboard page by default
+
+            // Navigation
+            navItems['dashboard'].addEventListener('click', () => showPage('dashboard'));
+            navItems['bill-entry'].addEventListener('click', () => showPage('bill-entry'));
+            navItems['recheck-entry'].addEventListener('click', () => showPage('recheck-entry'));
+            navItems['reconcile'].addEventListener('click', () => showPage('reconcile'));
+            navItems['import-data'].addEventListener('click', () => showPage('import-data'));
+            navItems['csv-report'].addEventListener('click', () => showPage('csv-report'));
+            navItems['reports'].addEventListener('click', () => showPage('reports'));
+            navItems['whatsapp-report'].addEventListener('click', () => openWhatsAppReportPrompt());
+
+            // Mobile Navigation
+            navItems['mobile-dashboard'].addEventListener('click', () => showPage('dashboard'));
+            navItems['mobile-bill-entry'].addEventListener('click', () => showPage('bill-entry'));
+            navItems['mobile-recheck-entry'].addEventListener('click', () => showPage('recheck-entry'));
+            navItems['mobile-reports'].addEventListener('click', () => showPage('reports'));
+            navItems['mobile-whatsapp-report'].addEventListener('click', () => showPage('whatsapp-report'));
+
+
+            navItems['reset-all-data'].addEventListener('click', async () => {
+                const confirmReset = await showMessageBox("Confirm Reset", "Are you sure you want to reset all old record data? This action cannot be undone.", true);
+                if (confirmReset) {
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    pvsData = { sheet1: [], sheet2: [], sheet5: [] };
+                    showMessageBox("Success", "All old record data successfully deleted!");
+                    showPage('dashboard');
+                }
+            });
+
+            navItems['exit'].addEventListener('click', async () => {
+                const confirmExit = await showMessageBox("Confirm Exit", "Are you sure you want to close the application? Your data is automatically saved.", true);
+                if (confirmExit) {
+                    showMessageBox("Application Closed", "The application has been 'closed'. Data is saved.");
+                }
+            });
+
+
+            // Bill Entry (for adding to temp list)
+            addBillToTempListBtn.addEventListener('click', addBillToTempList);
+            saveAllBillsBtn.addEventListener('click', saveAllBills);
+            clearTempBillsBtn.addEventListener('click', clearTempBills);
+            // Add event listener for Enter key on billAmountInput to add to list
+            billAmountInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent form submission
+                    addBillToTempList();
+                }
+            });
+
+            // Bill Entry (for managing existing bills)
+            searchBillBtn.addEventListener('click', searchBillEntry);
+            updateBillBtn.addEventListener('click', updateBillEntry);
+            deleteBillBtn.addEventListener('click', deleteBillEntry);
+            entryDateBillInput.addEventListener('change', (event) => {
+                currentSelectedDate = event.target.value;
+                setDateInputs();
+            });
+
+            // Received Entry
+            addReceivedToTempListBtn.addEventListener('click', addReceivedToTempList);
+            saveAllReceivedBtn.addEventListener('click', saveAllReceived);
+            clearTempReceivedBtn.addEventListener('click', clearTempReceived);
+            // Add event listener for Enter key on receivedAmountInput to add to list
+            receivedAmountInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent form submission
+                    addReceivedToTempList();
+                }
+            });
+            entryDateReceivedInput.addEventListener('change', (event) => {
+                currentSelectedDate = event.target.value;
+                setDateInputs();
+            });
+
+            // Reconciliation
+            runPVSBtn.addEventListener('click', runPVS);
+
+            // Import Data
+            loadCsvBtn.addEventListener('click', loadCsvHeaders);
+            importAmountColumnBtn.addEventListener('click', importAmountColumn);
+
+            // CSV Report
+            csvReportFilter.addEventListener('input', renderCsvReport);
+            printCsvReportBtn.addEventListener('click', () => printSection('csv-report-section'));
+
+            // Reports
+            reportFilterDate.addEventListener('change', renderReports);
+            reportFilterAmount.addEventListener('input', renderReports);
+            printAllReportsBtn.addEventListener('click', () => printSection('reports-section', 'all'));
+            printMatchedReportsBtn.addEventListener('click', () => printSection('reports-section', 'matched'));
+            printUnmatchedReportsBtn.addEventListener('click', () => printSection('reports-section', 'unmatched'));
+
+            // WhatsApp Prompt (for per-bill messages)
+            sendWhatsappBtn.addEventListener('click', sendWhatsappMessage);
+            cancelWhatsappBtn.addEventListener('click', closeWhatsappPrompt);
+            whatsappPromptOverlay.addEventListener('click', (event) => {
+                if (event.target === whatsappPromptOverlay) { // Only close if overlay itself is clicked
+                    closeWhatsappPrompt();
+                }
+            });
+
+            // WhatsApp Report Section
+            sendReportWhatsappBtn.addEventListener('click', sendReportViaWhatsapp);
+
+            // Message Box button event listeners (these can be outside window.onload as they are simple and direct)
+            messageBoxOkBtn.addEventListener('click', () => {
+                messageBoxOverlay.classList.add('hidden');
+                messageBox.classList.add('hidden');
+                if (resolveMessageBoxPromise) {
+                    resolveMessageBoxPromise(true);
+                }
+            });
+
+            messageBoxCancelBtn.addEventListener('click', () => {
+                messageBoxOverlay.classList.add('hidden');
+                messageBox.classList.add('hidden');
+                if (resolveMessageBoxPromise) {
+                    resolveMessageBoxPromise(false);
+                }
+            });
+        };
+
+        // Auto-save data when the user tries to close the tab or navigate away
+        window.addEventListener('beforeunload', saveData);
+
+    </script>
+</body>
+</html>
